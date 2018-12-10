@@ -94,7 +94,8 @@ public final class MultiTrackerActivity extends AppCompatActivity  {
     private class CaptureGestureListener extends GestureDetector.SimpleOnGestureListener {
         @Override
         public boolean onSingleTapConfirmed(MotionEvent e) {
-            return onTap(e.getRawX(), e.getRawY()) || super.onSingleTapConfirmed(e);
+            //return onTap(e.getRawX(), e.getRawY()) || super.onSingleTapConfirmed(e);
+            return true;
         }
     }
 
@@ -192,7 +193,14 @@ public final class MultiTrackerActivity extends AppCompatActivity  {
         // graphics for each text OCR on screen.  The factory is used by the multi-processor to
         // create a separate tracker instance for each text OCR.
         TextRecognizer textRecognizer = new TextRecognizer.Builder(context).build();
-        textRecognizer.setProcessor(new OcrDetectorProcessor(mGraphicOverlay));
+        OcrTrackerFactory ocrTrackerFactory = new OcrTrackerFactory(mGraphicOverlay);
+        textRecognizer.setProcessor(
+                new MultiProcessor.Builder<>(ocrTrackerFactory).build());
+
+
+        //textRecognizer.setProcessor(new OcrDetectorProcessor(mGraphicOverlay));
+
+        //textRecognizer.setProcessor(new OcrDetectorProcessor(mGraphicOverlay));
 
 
         // A multi-detector groups the two detectors together as one detector.  All images received
