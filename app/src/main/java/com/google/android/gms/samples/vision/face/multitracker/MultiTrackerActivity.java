@@ -198,11 +198,6 @@ public final class MultiTrackerActivity extends AppCompatActivity  {
                 new MultiProcessor.Builder<>(ocrTrackerFactory).build());
 
 
-        //textRecognizer.setProcessor(new OcrDetectorProcessor(mGraphicOverlay));
-
-        //textRecognizer.setProcessor(new OcrDetectorProcessor(mGraphicOverlay));
-
-
         // A multi-detector groups the two detectors together as one detector.  All images received
         // by this detector from the camera will be sent to each of the underlying detectors, which
         // will each do face and barcode detection, respectively.  The detection results from each
@@ -213,7 +208,6 @@ public final class MultiTrackerActivity extends AppCompatActivity  {
                 .add(barcodeDetector)
                 .add(textRecognizer)
                 .build();
-
 
         if (!multiDetector.isOperational()) {
             // Note: The first time that an app using the barcode or face API is installed on a
