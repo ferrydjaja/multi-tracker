@@ -1,0 +1,153 @@
+package com.google.android.gms.samples.vision.face.multitracker;
+
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.RectF;
+
+import com.google.android.gms.samples.vision.face.multitracker.ui.camera.GraphicOverlay;
+import com.google.android.gms.vision.Detector;
+import com.google.android.gms.vision.MultiProcessor;
+import com.google.android.gms.vision.Tracker;
+import com.google.android.gms.vision.barcode.Barcode;
+import com.google.android.gms.vision.text.Text;
+import com.google.android.gms.vision.text.TextBlock;
+
+import android.util.Log;
+import android.util.SparseArray;
+
+import java.util.List;
+
+class OcrTrackerFactory implements MultiProcessor.Factory<TextBlock> {
+    private GraphicOverlay mGraphicOverlay;
+    private TextBlock textBlock;
+
+    OcrTrackerFactory(GraphicOverlay graphicOverlay,  TextBlock text) {
+        mGraphicOverlay = graphicOverlay;
+        textBlock = text;
+    }
+
+    @Override
+    public Tracker<TextBlock> create(TextBlock textBlock) {
+        OcrGraphic graphic = new OcrGraphic(mGraphicOverlay, textBlock);
+        return new GraphicTracker<>(mGraphicOverlay, graphic);
+    }
+}
+
+class OcrGraphic extends TrackedGraphic<TextBlock> {
+
+    private static final int TEXT_COLOR = Color.WHITE;
+
+    private static Paint sRectPaint;
+    private static Paint sTextPaint;
+    private final TextBlock mText;
+
+    OcrGraphic(GraphicOverlay overlay, TextBlock text) {
+        super(overlay);
+
+        mText = text;
+
+        if (sRectPaint == null) {
+            sRectPaint = new Paint();
+            sRectPaint.setColor(TEXT_COLOR);
+            sRectPaint.setStyle(Paint.Style.STROKE);
+            sRectPaint.setStrokeWidth(4.0f);
+        }
+
+        if (sTextPaint == null) {
+            sTextPaint = new Paint();
+            sTextPaint.setColor(TEXT_COLOR);
+            sTextPaint.setTextSize(54.0f);
+        }
+        // Redraw the overlay, as this graphic has been added.
+        postInvalidate();
+    }
+
+
+    public TextBlock getTextBlock() {
+        return mText;
+    }
+
+    /**
+     * Checks whether a point is within the bounding box of this graphic.
+     * The provided point should be relative to this graphic's containing overlay.
+     * @param x An x parameter in the relative context of the canvas.
+     * @param y A y parameter in the relative context of the canvas.
+     * @return True if the provided point is contained within this graphic's bounding box.
+     */
+    public boolean contains(float x, float y) {
+        TextBlock text = mText;
+        if (text == null) {
+            return false;
+        }
+        RectF rect = new RectF(text.getBoundingBox());
+        rect.left = translateX(rect.left);
+        rect.top = translateY(rect.top);
+        rect.right = translateX(rect.right);
+        rect.bottom = translateY(rect.bottom);
+        return (rect.left < x && rect.right > x && rect.top < y && rect.bottom > y);
+    }
+
+    /**
+     * Draws the text block annotations for position, size, and raw value on the supplied canvas.
+     */
+    @Override
+    public void draw(Canvas canvas) {
+        TextBlock text = mText;
+        if (text == null) {
+            return;
+        }
+
+        // Draws the bounding box around the TextBlock.
+        RectF rect = new RectF(text.getBoundingBox());
+        rect.left = translateX(rect.left);
+        rect.top = translateY(rect.top);
+        rect.right = translateX(rect.right);
+        rect.bottom = translateY(rect.bottom);
+        canvas.drawRect(rect, sRectPaint);
+
+        // Break the text into multiple lines and draw each one according to its own bounding box.
+        List<? extends Text> textComponents = text.getComponents();
+        for(Text currentText : textComponents) {
+            float left = translateX(currentText.getBoundingBox().left);
+            float bottom = translateY(currentText.getBoundingBox().bottom);
+            canvas.drawText(currentText.getValue(), left, bottom, sTextPaint);
+        }
+    }
+
+    @Override
+    void updateItem(TextBlock item) {
+
+    }
+
+ }
+
+class OcrDetectorProcessor implements Detector.Processor<TextBlock> {
+    private GraphicOverlay mGraphicOverlay;
+
+    OcrDetectorProcessor(GraphicOverlay graphicOverlay) {
+        mGraphicOverlay = graphicOverlay;
+    }
+
+    public void receiveDetections(Detector.Detections<TextBlock> detections) {
+        mGraphicOverlay.clear();
+        SparseArray<TextBlock> items = detections.getDetectedItems();
+
+        StringBuilder stringBuilder = new StringBuilder();
+
+        for (int i = 0; i < items.size(); ++i) {
+            TextBlock item = items.valueAt(i);
+            OcrGraphic graphic = new OcrGraphic(mGraphicOverlay, item);
+            mGraphicOverlay.add(graphic);
+
+            stringBuilder.append(item.getValue());
+            stringBuilder.append("\n");
+        }
+
+        Log.d("FD", "Word:" + stringBuilder.toString());
+    }
+
+    public void release() {
+        mGraphicOverlay.clear();
+    }
+}
