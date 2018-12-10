@@ -22,14 +22,14 @@ class OcrTrackerFactory implements MultiProcessor.Factory<TextBlock> {
     private GraphicOverlay mGraphicOverlay;
     private TextBlock textBlock;
 
-    OcrTrackerFactory(GraphicOverlay graphicOverlay,  TextBlock text) {
+    OcrTrackerFactory(GraphicOverlay graphicOverlay) {
         mGraphicOverlay = graphicOverlay;
-        textBlock = text;
+        //textBlock = text;
     }
 
     @Override
     public Tracker<TextBlock> create(TextBlock textBlock) {
-        OcrGraphic graphic = new OcrGraphic(mGraphicOverlay, textBlock);
+        OcrGraphic graphic = new OcrGraphic(mGraphicOverlay);
         return new GraphicTracker<>(mGraphicOverlay, graphic);
     }
 }
@@ -40,12 +40,14 @@ class OcrGraphic extends TrackedGraphic<TextBlock> {
 
     private static Paint sRectPaint;
     private static Paint sTextPaint;
-    private final TextBlock mText;
+    private volatile TextBlock mText;
 
-    OcrGraphic(GraphicOverlay overlay, TextBlock text) {
+    //mText = TextBlock;
+
+    OcrGraphic(GraphicOverlay overlay) {
         super(overlay);
 
-        mText = text;
+        //mText = TextBlock;
 
         if (sRectPaint == null) {
             sRectPaint = new Paint();
@@ -64,29 +66,11 @@ class OcrGraphic extends TrackedGraphic<TextBlock> {
     }
 
 
-    public TextBlock getTextBlock() {
-        return mText;
-    }
+    //public TextBlock getTextBlock() {
+    //    return mText;
+    //}
 
-    /**
-     * Checks whether a point is within the bounding box of this graphic.
-     * The provided point should be relative to this graphic's containing overlay.
-     * @param x An x parameter in the relative context of the canvas.
-     * @param y A y parameter in the relative context of the canvas.
-     * @return True if the provided point is contained within this graphic's bounding box.
-     */
-    public boolean contains(float x, float y) {
-        TextBlock text = mText;
-        if (text == null) {
-            return false;
-        }
-        RectF rect = new RectF(text.getBoundingBox());
-        rect.left = translateX(rect.left);
-        rect.top = translateY(rect.top);
-        rect.right = translateX(rect.right);
-        rect.bottom = translateY(rect.bottom);
-        return (rect.left < x && rect.right > x && rect.top < y && rect.bottom > y);
-    }
+
 
     /**
      * Draws the text block annotations for position, size, and raw value on the supplied canvas.
@@ -116,38 +100,11 @@ class OcrGraphic extends TrackedGraphic<TextBlock> {
     }
 
     @Override
-    void updateItem(TextBlock item) {
+    void updateItem(TextBlock text) {
+        Log.d("FD", "TextFD:" + text.getValue());
 
+        mText = text;
+        postInvalidate();
     }
 
  }
-
-class OcrDetectorProcessor implements Detector.Processor<TextBlock> {
-    private GraphicOverlay mGraphicOverlay;
-
-    OcrDetectorProcessor(GraphicOverlay graphicOverlay) {
-        mGraphicOverlay = graphicOverlay;
-    }
-
-    public void receiveDetections(Detector.Detections<TextBlock> detections) {
-        mGraphicOverlay.clear();
-        SparseArray<TextBlock> items = detections.getDetectedItems();
-
-        StringBuilder stringBuilder = new StringBuilder();
-
-        for (int i = 0; i < items.size(); ++i) {
-            TextBlock item = items.valueAt(i);
-            OcrGraphic graphic = new OcrGraphic(mGraphicOverlay, item);
-            mGraphicOverlay.add(graphic);
-
-            stringBuilder.append(item.getValue());
-            stringBuilder.append("\n");
-        }
-
-        Log.d("FD", "Word:" + stringBuilder.toString());
-    }
-
-    public void release() {
-        mGraphicOverlay.clear();
-    }
-}
