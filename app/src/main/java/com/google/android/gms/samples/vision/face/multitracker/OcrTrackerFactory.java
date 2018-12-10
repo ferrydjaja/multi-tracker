@@ -6,15 +6,12 @@ import android.graphics.Paint;
 import android.graphics.RectF;
 
 import com.google.android.gms.samples.vision.face.multitracker.ui.camera.GraphicOverlay;
-import com.google.android.gms.vision.Detector;
 import com.google.android.gms.vision.MultiProcessor;
 import com.google.android.gms.vision.Tracker;
-import com.google.android.gms.vision.barcode.Barcode;
 import com.google.android.gms.vision.text.Text;
 import com.google.android.gms.vision.text.TextBlock;
 
 import android.util.Log;
-import android.util.SparseArray;
 
 import java.util.List;
 
@@ -24,7 +21,6 @@ class OcrTrackerFactory implements MultiProcessor.Factory<TextBlock> {
 
     OcrTrackerFactory(GraphicOverlay graphicOverlay) {
         mGraphicOverlay = graphicOverlay;
-        //textBlock = text;
     }
 
     @Override
@@ -42,12 +38,8 @@ class OcrGraphic extends TrackedGraphic<TextBlock> {
     private static Paint sTextPaint;
     private volatile TextBlock mText;
 
-    //mText = TextBlock;
-
     OcrGraphic(GraphicOverlay overlay) {
         super(overlay);
-
-        //mText = TextBlock;
 
         if (sRectPaint == null) {
             sRectPaint = new Paint();
@@ -69,8 +61,6 @@ class OcrGraphic extends TrackedGraphic<TextBlock> {
     //public TextBlock getTextBlock() {
     //    return mText;
     //}
-
-
 
     /**
      * Draws the text block annotations for position, size, and raw value on the supplied canvas.
